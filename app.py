@@ -18,7 +18,7 @@ class EtherscanConnection:
     @st.cache(allow_output_mutation=True)
     def query(self, module, action, address, tag="latest"):
         # Perform the API query and return the balance for the specified Ethereum address
-        url = f"{self.base_url}?module=account&action=balance&address={address}&tag=latest&apikey={self.api_key}"
+        url = f"{self.base_url}?module={module}&action={balance}&address={address}&tag=latest&apikey={self.api_key}"
 
         response = requests.get(url)
         data = response.json()
