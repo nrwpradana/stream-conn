@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-import pandas as pd
 
 # Define the Connection class for Etherscan API
 class EtherscanConnection:
@@ -16,10 +15,10 @@ class EtherscanConnection:
         # Return the Etherscan API instance, which is just the base URL
         return self.base_url
 
-    @st.cache_data(allow_output_mutation=True)
+    @st.cache(allow_output_mutation=True)
     def query(self, module, action, address, tag="latest"):
         # Perform the API query and return the balance for the specified Ethereum address
-        url = f"{self.base_url}?module={module}&action={action}&address={address}&tag={tag}&apikey={self.api_key}"
+        url = f"{self.base_url}?module=account&action=balance&address={address}&tag=latest&apikey={self.api_key}"
 
         response = requests.get(url)
         data = response.json()
@@ -33,7 +32,7 @@ class EtherscanConnection:
             return None
 
 # Create an instance of the EtherscanConnection class using st.experimental_connection
-@st.experimental_connection(backend="etherscan_connection")
+@st.experimental_memo(backend="etherscan_connection")
 def create_connection():
     api_key = st.text_input("Enter your Etherscan API key", type="password")
     return EtherscanConnection(api_key)
