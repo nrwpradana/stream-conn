@@ -1,25 +1,24 @@
+# connection.py
+
 from streamlit.connections import ExperimentalBaseConnection
 from streamlit.runtime.caching import cache_data
 import pandas as pd
-import requests
+import hashlib
 
 class VirusTotalConnection(ExperimentalBaseConnection):
     """Basic st.experimental_connection implementation for VirusTotal API"""
 
-    def __init__(self, api_key):
-        self.api_key = api_key
+    def __init__(self, API_KEY):
+        self.API_KEY = API_KEY
 
     def _request(self, endpoint, params=None):
         headers = {
-            'x-apikey': self.api_key
+            'x-apikey': self.API_KEY
         }
         url = f'https://www.virustotal.com/api/v3/{endpoint}'
         response = requests.get(url, params=params, headers=headers)
         response.raise_for_status()
         return response.json()
-
-    def _connect(self, **kwargs) -> "VirusTotalConnection":
-        return self
 
     def get_file_report(self, sha256, ttl: int = 3600) -> dict:
         @cache_data(ttl=ttl)
