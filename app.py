@@ -50,6 +50,7 @@ def main():
         st.header("Demo Etherscan API Functionality")
 
         # Example query to retrieve Ethereum balance by address
+        st.text("Example Address : 0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae")
         address = st.text_input("Enter an Ethereum address")
         if address:
             balance = connection.query(module="account", action="balance", address=address)
