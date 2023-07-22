@@ -1,43 +1,59 @@
-import os
 import streamlit as st
+from streamlit.connections import ExperimentalBaseConnection
+from streamlit.runtime.caching import cache_data
 import kaggle
-import json
+import pandas as pd
 
-def authenticate_kaggle_api(json_data):
-    # Load the Kaggle credentials from the JSON file
-    kaggle_credentials = json.loads(json_data)
+class KaggleConnection(ExperimentalBaseConnection[kaggle.api.KaggleApi]):
+    """Basic st.experimental_connection implementation for Kaggle API"""
 
-    # Set Kaggle environment variables
-    os.environ['KAGGLE_USERNAME'] = kaggle_credentials['username']
-    os.environ['KAGGLE_KEY'] = kaggle_credentials['key']
+    def _connect(self, kaggle_json_path: str) -> kaggle.api.KaggleApi:
+        api = kaggle.api.Api()
+        api.authenticate(apikey_path=kaggle_json_path)
+        st.success("Connected to Kaggle API successfully.")
+        return api
 
-    # Verify the Kaggle API configuration
-    kaggle.api.authenticate()
+    def cursor(self) -> kaggle.api.KaggleApi:
+        return self._instance
+
+    def query(self, competition_name: str, file_name: str, ttl: int = 3600) -> pd.DataFrame:
+        @cache_data(ttl=ttl)
+        def _query(competition_name: str, file_name: str) -> pd.DataFrame:
+            api = self.cursor()
+            api.competition_download_file(competition=competition_name, file_name=file_name)
+            df = pd.read_csv(file_name)
+            return df
+
+        return _query(competition_name, file_name)
 
 def main():
-    st.title("Kaggle API Interaction with Streamlit")
+    st.title("Kaggle Streamlit App")
 
-    # File Uploader to upload Kaggle account JSON
-    uploaded_file = st.file_uploader("Upload Kaggle Account JSON", type=["json"])
+    # Kaggle API token JSON file input
+    kaggle_json_path = st.text_input("Enter the path to your Kaggle API token JSON file:")
 
-    if uploaded_file is not None:
-        # Read the JSON file data
-        json_data = uploaded_file.read()
+    if not kaggle_json_path:
+        st.warning("Please enter the path to your Kaggle API token JSON file.")
+        st.stop()
 
-        # Try authenticating the Kaggle API using the uploaded JSON data
-        try:
-            authenticate_kaggle_api(json_data)
-            st.success("Kaggle API authentication successful!")
-        except Exception as e:
-            st.error("Kaggle API authentication failed. Please check the JSON file.")
-            st.error(e)
-            return
+    # Create a connection object
+    connection = KaggleConnection(kaggle_json_path)
 
-        # You can now use the Kaggle API here
-        # For example, list Kaggle datasets
-        datasets = kaggle.api.dataset_list()
-        st.write("List of Kaggle Datasets:")
-        st.write(datasets)
+    # Query form
+    st.subheader("Download Kaggle Competition Data")
+    competition_name = st.text_input("Enter the competition name:")
+    file_name = st.text_input("Enter the file name to download:")
+
+    if st.button("Download"):
+        if competition_name and file_name:
+            df = connection.query(competition_name, file_name)
+            if not df.empty:
+                st.write("Downloaded Data:")
+                st.write(df)
+            else:
+                st.warning("Data not available or failed to download.")
+        else:
+            st.warning("Please enter the competition name and file name.")
 
 if __name__ == "__main__":
     main()
