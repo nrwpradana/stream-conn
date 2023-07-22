@@ -1,7 +1,9 @@
 import streamlit as st
 import requests
+from streamlit.connections import ExperimentalBaseConnection
+from streamlit.runtime.caching import cache_data
 
-class OpenWeatherMapConnection:
+class OpenWeatherMapConnection(ExperimentalBaseConnection[OpenWeatherMapConnection]):
     def __init__(self, api_key):
         self.api_key = api_key
         self.base_url = "https://api.openweathermap.org/data/2.5/weather"
