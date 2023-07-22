@@ -6,7 +6,7 @@ import requests
 class OpenWeatherMapConnection(ExperimentalBaseConnection[requests.Session]):
     """Basic st.experimental_connection implementation for OpenWeatherMap API"""
 
-    def _connect(self, api_key: str) -> requests.Session:
+    def _connect(self, api_key: str, **kwargs) -> requests.Session:
         session = requests.Session()
         session.params = {"appid": api_key}
         st.success("Connected to OpenWeatherMap API successfully.")
