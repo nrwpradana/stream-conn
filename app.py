@@ -58,5 +58,10 @@ def main():
                 st.write("Ethereum Address Balance:")
                 st.write(balance)
 
+    link_text = "Click here to visit Github"
+    link_url = "https://github.com/nrwpradana/stream-conn"
+    link_markdown = f"[{link_text}]({link_url})"
+    st.markdown(link_markdown, unsafe_allow_html=True)
+
 if __name__ == "__main__":
     main()
