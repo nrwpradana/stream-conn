@@ -2,7 +2,7 @@ import streamlit as st
 from connection import VirusTotalConnection
 
 # Retrieve the VirusTotal API key from Streamlit secrets
-API_KEY = st.secrets["virustotal_api_key"]
+API_KEY = st.secrets["1578cfbb6b7c950b6a61c56ab5bc30087254b25773a4560eb6d361091541ecde"]
 connection = VirusTotalConnection(API_KEY)
 
 st.title("VirusTotal API Test")
