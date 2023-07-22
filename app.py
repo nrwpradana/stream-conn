@@ -1,18 +1,18 @@
 import streamlit as st
 from connection import OpenWeatherMapConnection
 
+def get_connection(connection_name):
+    if connection_name not in st.session_state:
+        api_key = st.text_input("Enter your OpenWeatherMap API key", type="password")
+        st.session_state[connection_name] = OpenWeatherMapConnection(api_key)
+    return st.session_state[connection_name]
+
 def main():
     st.title("OpenWeatherMap API Connection Demo")
 
-    # Get the OpenWeatherMap API key from the user through a text input
-    api_key = st.text_input("Enter your OpenWeatherMap API key", type="password")
-
     # Get the OpenWeatherMapConnection instance from the connection
-    connection = st.experimental_connection(
-        "openweathermap_connection",
-        type=OpenWeatherMapConnection,
-        api_key=api_key
-    )
+    connection_name = "openweathermap_connection"
+    connection = get_connection(connection_name)
 
     if connection.api_key:
         st.success("OpenWeatherMap API connected successfully!")
