@@ -1,48 +1,37 @@
 from streamlit.connections import ExperimentalBaseConnection
 from streamlit.runtime.caching import cache_data
-import requests
 import pandas as pd
+import requests
 
-class OpenWeatherMapConnection(ExperimentalBaseConnection):
-    """Basic st.experimental_connection implementation for OpenWeatherMap"""
+class VirusTotalConnection(ExperimentalBaseConnection):
+    """Basic st.experimental_connection implementation for VirusTotal API"""
 
-    def _connect(self, **kwargs) -> None:
-        # You can put any setup code here if needed
-        pass
+    def __init__(self, api_key):
+        self.api_key = api_key
 
-    def _get_api_key(self):
-        # Replace 'your_openweathermap_api_key' with your actual API key
-        # You can get an API key by signing up on the OpenWeatherMap website
-        return '34ef5fe7db281490d556352cba3a3890'
-
-    def get_weather_data(self, city: str, country: str = "US") -> pd.DataFrame:
-        api_key = self._get_api_key()
-        base_url = "https://api.openweathermap.org/data/2.5/weather"
-
-        params = {
-            "q": f"{city},{country}",
-            "appid": api_key,
-            "units": "metric",  # Change to "imperial" for Fahrenheit units
+    def _request(self, endpoint, params=None):
+        headers = {
+            'x-apikey': self.api_key
         }
+        url = f'https://www.virustotal.com/api/v3/{endpoint}'
+        response = requests.get(url, params=params, headers=headers)
+        response.raise_for_status()
+        return response.json()
 
-        response = requests.get(base_url, params=params)
+    def _connect(self, **kwargs) -> "VirusTotalConnection":
+        return self
 
-        if response.status_code == 200:
-            data = response.json()
-            df = pd.DataFrame({
-                "City": [data["name"]],
-                "Country": [data["sys"]["country"]],
-                "Temperature (°C)": [data["main"]["temp"]],
-                "Description": [data["weather"][0]["description"]],
-            })
-            return df
-        else:
-            # In case of an error, return an empty DataFrame
-            return pd.DataFrame()
-
-    def query(self, city: str, country: str = "US", ttl: int = 3600) -> pd.DataFrame:
+    def get_file_report(self, sha256, ttl: int = 3600) -> dict:
         @cache_data(ttl=ttl)
-        def _query(city: str, country: str, **kwargs) -> pd.DataFrame:
-            return self.get_weather_data(city, country)
+        def _get_file_report(sha256):
+            return self._request(f'files/{sha256}')
+        
+        return _get_file_report(sha256)
 
-        return _query(city, country)
+    def get_url_report(self, url, ttl: int = 3600) -> dict:
+        @cache_data(ttl=ttl)
+        def _get_url_report(url):
+            params = {'resource': url}
+            return self._request('urls', params=params)
+        
+        return _get_url_report(url)

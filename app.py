@@ -1,25 +1,29 @@
 import streamlit as st
-from connection import OpenWeatherMapConnection
+from connection import VirusTotalConnection
 
-def main():
-    st.title("OpenWeatherMap Streamlit App")
+# Retrieve the VirusTotal API key from Streamlit secrets
+API_KEY = st.secrets["virustotal_api_key"]
+connection = VirusTotalConnection(API_KEY)
 
-    # Create an instance of the OpenWeatherMapConnection
-    connection = OpenWeatherMapConnection()
+st.title("VirusTotal API Test")
 
-    # Get user input for the city and country
-    city = st.text_input("Enter the city name", "London")
-    country = st.text_input("Enter the country code", "GB")
+# Input for user to enter SHA256 hash or URL
+input_type = st.radio("Select Input Type", ("SHA256 Hash", "URL"))
 
-    if st.button("Get Weather"):
-        # Call the query method to retrieve weather data for the specified city
-        weather_data = connection.query(city, country)
-
-        if not weather_data.empty:
-            st.subheader("Weather Information")
-            st.write(weather_data)
+if input_type == "SHA256 Hash":
+    sha256_hash = st.text_input("Enter SHA256 Hash")
+    if st.button("Get File Report"):
+        if sha256_hash:
+            report = connection.get_file_report(sha256_hash)
+            st.json(report)
         else:
-            st.error("Weather data not available. Please check the city and country code.")
+            st.error("Please enter a valid SHA256 hash.")
 
-if __name__ == "__main__":
-    main()
+else:
+    url = st.text_input("Enter URL")
+    if st.button("Get URL Report"):
+        if url:
+            report = connection.get_url_report(url)
+            st.json(report)
+        else:
+            st.error("Please enter a valid URL.")
