@@ -11,7 +11,7 @@ API_KEY = st.text_input("Enter your VirusTotal API key", type="password")
 # Check if the API key is provided
 if API_KEY:
     #connection = VirusTotalConnection(API_KEY)
-    connection = st.experimental_connection("virustotal", type=VirusTotalConnection, API_KEY=API_KEY)
+    connection = st.experimental_connection(type=VirusTotalConnection, API_KEY=API_KEY)
 
     # Input for user to upload a file
     uploaded_file = st.file_uploader("Upload a file")
