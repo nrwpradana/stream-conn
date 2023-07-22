@@ -1,32 +1,25 @@
 import streamlit as st
 from connection import OpenWeatherMapConnection
 
-def get_connection(connection_name):
-    if connection_name not in st.session_state:
-        api_key = st.text_input("Enter your OpenWeatherMap API key", type="password")
-        st.session_state[connection_name] = OpenWeatherMapConnection(api_key)
-    return st.session_state[connection_name]
-
 def main():
-    st.title("OpenWeatherMap API Connection Demo")
+    st.title("OpenWeatherMap Streamlit App")
 
-    # Get the OpenWeatherMapConnection instance from the connection
-    connection_name = "openweathermap_connection"
-    connection = get_connection(connection_name)
+    # Create an instance of the OpenWeatherMapConnection
+    connection = OpenWeatherMapConnection()
 
-    if connection.api_key:
-        st.success("OpenWeatherMap API connected successfully!")
+    # Get user input for the city and country
+    city = st.text_input("Enter the city name", "London")
+    country = st.text_input("Enter the country code", "GB")
 
-        # Demo OpenWeatherMap API functionality
-        st.header("Demo OpenWeatherMap API Functionality")
+    if st.button("Get Weather"):
+        # Call the query method to retrieve weather data for the specified city
+        weather_data = connection.query(city, country)
 
-        # Example query to retrieve weather data for a specific city
-        city_name = st.text_input("Enter a city name")
-        if city_name:
-            weather_data = connection.query(city_name)
-            if weather_data:
-                st.write("Weather Data:")
-                st.write(weather_data)
+        if not weather_data.empty:
+            st.subheader("Weather Information")
+            st.write(weather_data)
+        else:
+            st.error("Weather data not available. Please check the city and country code.")
 
 if __name__ == "__main__":
     main()

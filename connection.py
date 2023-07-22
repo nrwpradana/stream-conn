@@ -1,32 +1,48 @@
-import streamlit as st
-import requests
 from streamlit.connections import ExperimentalBaseConnection
 from streamlit.runtime.caching import cache_data
+import requests
+import pandas as pd
 
-class OpenWeatherMapConnection(ExperimentalBaseConnection[object]):
-    def __init__(self, api_key):
-        self.api_key = api_key
-        self.base_url = "https://api.openweathermap.org/data/2.5/weather"
+class OpenWeatherMapConnection(ExperimentalBaseConnection):
+    """Basic st.experimental_connection implementation for OpenWeatherMap"""
 
-    def _connect(self):
-        # No specific connection setup is required for OpenWeatherMap API
+    def _connect(self, **kwargs) -> None:
+        # You can put any setup code here if needed
         pass
 
-    def cursor(self):
-        # Return the OpenWeatherMap API instance, which is just the base URL
-        return self.base_url
+    def _get_api_key(self):
+        # Replace 'your_openweathermap_api_key' with your actual API key
+        # You can get an API key by signing up on the OpenWeatherMap website
+        return '34ef5fe7db281490d556352cba3a3890'
 
-    @st.cache_data(ttl=600)  # Cache data for 10 minutes to reduce API calls
-    def query(self, city_name):
-        # Perform the API query and return weather data for the specified city
-        url = f"{self.base_url}?q={city_name}&appid={self.api_key}"
+    def get_weather_data(self, city: str, country: str = "US") -> pd.DataFrame:
+        api_key = self._get_api_key()
+        base_url = "https://api.openweathermap.org/data/2.5/weather"
 
-        response = requests.get(url)
-        data = response.json()
+        params = {
+            "q": f"{city},{country}",
+            "appid": api_key,
+            "units": "metric",  # Change to "imperial" for Fahrenheit units
+        }
 
-        if data["cod"] == 200:
-            return data
+        response = requests.get(base_url, params=params)
+
+        if response.status_code == 200:
+            data = response.json()
+            df = pd.DataFrame({
+                "City": [data["name"]],
+                "Country": [data["sys"]["country"]],
+                "Temperature (°C)": [data["main"]["temp"]],
+                "Description": [data["weather"][0]["description"]],
+            })
+            return df
         else:
-            st.error("Error fetching weather data from OpenWeatherMap API.")
-            st.error(data["message"])
-            return None
+            # In case of an error, return an empty DataFrame
+            return pd.DataFrame()
+
+    def query(self, city: str, country: str = "US", ttl: int = 3600) -> pd.DataFrame:
+        @cache_data(ttl=ttl)
+        def _query(city: str, country: str, **kwargs) -> pd.DataFrame:
+            return self.get_weather_data(city, country)
+
+        return _query(city, country)
