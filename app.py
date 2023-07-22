@@ -17,20 +17,16 @@ class EtherscanConnection:
         return self.base_url
 
     @st.cache_data(allow_output_mutation=True)
-    def query(self, module, action, params=None):
-        # Perform the API query and return the response as a pandas DataFrame
-        url = f"{self.base_url}?module={module}&action={action}&apikey={self.api_key}"
-
-        if params:
-            for key, value in params.items():
-                url += f"&{key}={value}"
+    def query(self, module, action, address, tag="latest"):
+        # Perform the API query and return the balance for the specified Ethereum address
+        url = f"{self.base_url}?module={module}&action={action}&address={address}&tag={tag}&apikey={self.api_key}"
 
         response = requests.get(url)
         data = response.json()
 
         if data["status"] == "1":
-            df = pd.DataFrame(data["result"])
-            return df
+            balance = data["result"]
+            return balance
         else:
             st.error("Error fetching data from Etherscan API.")
             st.error(data["message"])
@@ -54,21 +50,13 @@ def main():
         # Demo Etherscan API functionality
         st.header("Demo Etherscan API Functionality")
 
-        # Example query to retrieve Ethereum transactions by address
+        # Example query to retrieve Ethereum balance by address
         address = st.text_input("Enter an Ethereum address")
         if address:
-            params = {
-                "address": address,
-                "startblock": 0,
-                "endblock": 99999999,
-                "sort": "asc",
-                "apikey": connection.api_key
-            }
-            df = connection.query(module="account", action="txlist", params=params)
-
-            if df is not None:
-                st.write("Transactions for Address:")
-                st.write(df)
+            balance = connection.query(module="account", action="balance", address=address)
+            if balance is not None:
+                st.write("Ethereum Address Balance:")
+                st.write(balance)
 
 if __name__ == "__main__":
     main()
