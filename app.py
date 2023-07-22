@@ -12,7 +12,7 @@ if API_KEY:
     connection = VirusTotalConnection(API_KEY)
 
     # Input for user to enter the SHA256 hash
-    sha256_hash = st.text_input("Enter the SHA256 hash you want to test")
+    sha256_hash = st.text_input("Enter the hash file (SHA256) you want to test")
 
     # Check if the SHA256 hash is provided
     if sha256_hash:
