@@ -17,7 +17,7 @@ file_report = connection.get_file_report(sha256_hash)
 #url_report = connection.get_url_report(url)
 
 st.subheader("File Report:")
-st.json(pd.json_normalize(file_report))
+st.write(pd.DataFrame.from_dict(file_report))
 
 #st.subheader("URL Report:")
-#st.json(pd.json_normalize(url_report))
+#st.write(pd.DataFrame.from_dict(url_report))
