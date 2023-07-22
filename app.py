@@ -33,16 +33,15 @@ class EtherscanConnection:
 
 # Create an instance of the EtherscanConnection class using st.experimental_connection
 #@st.experimental_memo(backend="etherscan_connection")
-#def create_connection:
-    
-    
+def create_connection():
+    api_key = st.text_input("Enter your Etherscan API key", type="password")
+    return EtherscanConnection(api_key)
 
 def main():
     st.title("Etherscan API Connection Demo")
 
-    api_key = st.text_input("Enter your Etherscan API key", type="password")
     # Get the EtherscanConnection instance from the connection
-    connection = st.experimental_connection(EtherscanConnection(api_key))
+    connection = create_connection()
 
     if connection.api_key:
         st.success("Etherscan API connected successfully!")
