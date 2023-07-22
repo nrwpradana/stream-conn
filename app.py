@@ -8,9 +8,9 @@ def main():
     api_key = st.text_input("Enter your OpenWeatherMap API key", type="password")
 
     # Get the OpenWeatherMapConnection instance from the connection
-    connection = st.connection.get_connection(
-        key="openweathermap_connection",
-        config=OpenWeatherMapConnection,
+    connection = st.experimental_connection(
+        "openweathermap_connection",
+        type=OpenWeatherMapConnection,
         api_key=api_key
     )
 
