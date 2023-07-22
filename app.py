@@ -42,7 +42,7 @@ def main():
 
     api_key = st.text_input("Enter your Etherscan API key", type="password")
     # Get the EtherscanConnection instance from the connection
-    connection = st.experimental_connection(return EtherscanConnection(api_key))
+    connection = st.experimental_connection(EtherscanConnection(api_key))
 
     if connection.api_key:
         st.success("Etherscan API connected successfully!")
