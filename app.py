@@ -1,62 +1,43 @@
+import os
 import streamlit as st
-from streamlit.connections import ExperimentalBaseConnection
-from streamlit.runtime.caching import cache_data
-import requests
+import kaggle
+import json
 
-class OpenWeatherMapConnection(ExperimentalBaseConnection[requests.Session]):
-    """Basic st.experimental_connection implementation for OpenWeatherMap API"""
+def authenticate_kaggle_api(json_data):
+    # Load the Kaggle credentials from the JSON file
+    kaggle_credentials = json.loads(json_data)
 
-    def _connect(self, api_key: str) -> requests.Session:
-        session = requests.Session()
-        session.params = {"appid": api_key}
-        st.success("Connected to OpenWeatherMap API successfully.")
-        return session
+    # Set Kaggle environment variables
+    os.environ['KAGGLE_USERNAME'] = kaggle_credentials['username']
+    os.environ['KAGGLE_KEY'] = kaggle_credentials['key']
 
-    def cursor(self) -> requests.Session:
-        return self._instance
-
-    def query(self, city: str, ttl: int = 3600) -> dict:
-        @cache_data(ttl=ttl)
-        def _query(city: str) -> dict:
-            url = "http://api.openweathermap.org/data/2.5/weather"
-            params = {"q": city, "units": "metric"}
-            response = self.cursor().get(url, params=params)
-
-            if response.status_code == 200:
-                return response.json()
-            else:
-                st.error(f"Failed to fetch weather data. Error code: {response.status_code}")
-                return {}
-
-        return _query(city)
+    # Verify the Kaggle API configuration
+    kaggle.api.authenticate()
 
 def main():
-    st.title("OpenWeatherMap Streamlit App")
+    st.title("Kaggle API Interaction with Streamlit")
 
-    # API key input
-    api_key = st.text_input("Enter your OpenWeatherMap API key:")
+    # File Uploader to upload Kaggle account JSON
+    uploaded_file = st.file_uploader("Upload Kaggle Account JSON", type=["json"])
 
-    if not api_key:
-        st.warning("Please enter your OpenWeatherMap API key.")
-        st.stop()
+    if uploaded_file is not None:
+        # Read the JSON file data
+        json_data = uploaded_file.read()
 
-    # Create a connection object
-    connection = OpenWeatherMapConnection(api_key)
+        # Try authenticating the Kaggle API using the uploaded JSON data
+        try:
+            authenticate_kaggle_api(json_data)
+            st.success("Kaggle API authentication successful!")
+        except Exception as e:
+            st.error("Kaggle API authentication failed. Please check the JSON file.")
+            st.error(e)
+            return
 
-    # Query form
-    st.subheader("Fetch Weather Data")
-    city = st.text_input("Enter the city name:")
-
-    if st.button("Fetch"):
-        if city:
-            weather_data = connection.query(city)
-            if weather_data:
-                st.write("Weather Data for", city)
-                st.write(weather_data)
-            else:
-                st.warning("Weather data not available for the provided city.")
-        else:
-            st.warning("Please enter a city name.")
+        # You can now use the Kaggle API here
+        # For example, list Kaggle datasets
+        datasets = kaggle.api.dataset_list()
+        st.write("List of Kaggle Datasets:")
+        st.write(datasets)
 
 if __name__ == "__main__":
     main()
