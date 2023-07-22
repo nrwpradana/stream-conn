@@ -1,59 +1,74 @@
 import streamlit as st
-from streamlit.connections import ExperimentalBaseConnection
-from streamlit.runtime.caching import cache_data
-import kaggle
+import requests
 import pandas as pd
 
-class KaggleConnection(ExperimentalBaseConnection[kaggle.api.KaggleApi]):
-    """Basic st.experimental_connection implementation for Kaggle API"""
+# Define the Connection class for Etherscan API
+class EtherscanConnection:
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.base_url = "https://api.etherscan.io/api"
 
-    def _connect(self, kaggle_json_path: str) -> kaggle.api.KaggleApi:
-        api = kaggle.api.Api()
-        api.authenticate(apikey_path=kaggle_json_path)
-        st.success("Connected to Kaggle API successfully.")
-        return api
+    def _connect(self):
+        # No specific connection setup is required for Etherscan API
+        pass
 
-    def cursor(self) -> kaggle.api.KaggleApi:
-        return self._instance
+    def cursor(self):
+        # Return the Etherscan API instance, which is just the base URL
+        return self.base_url
 
-    def query(self, competition_name: str, file_name: str, ttl: int = 3600) -> pd.DataFrame:
-        @cache_data(ttl=ttl)
-        def _query(competition_name: str, file_name: str) -> pd.DataFrame:
-            api = self.cursor()
-            api.competition_download_file(competition=competition_name, file_name=file_name)
-            df = pd.read_csv(file_name)
+    @st.cache_data(allow_output_mutation=True)
+    def query(self, module, action, params=None):
+        # Perform the API query and return the response as a pandas DataFrame
+        url = f"{self.base_url}?module={module}&action={action}&apikey={self.api_key}"
+
+        if params:
+            for key, value in params.items():
+                url += f"&{key}={value}"
+
+        response = requests.get(url)
+        data = response.json()
+
+        if data["status"] == "1":
+            df = pd.DataFrame(data["result"])
             return df
+        else:
+            st.error("Error fetching data from Etherscan API.")
+            st.error(data["message"])
+            return None
 
-        return _query(competition_name, file_name)
+# Create an instance of the EtherscanConnection class using st.experimental_connection
+@st.experimental_connection(backend="etherscan_connection")
+def create_connection():
+    api_key = st.text_input("Enter your Etherscan API key", type="password")
+    return EtherscanConnection(api_key)
 
 def main():
-    st.title("Kaggle Streamlit App")
+    st.title("Etherscan API Connection Demo")
 
-    # Kaggle API token JSON file input
-    kaggle_json_path = st.text_input("Enter the path to your Kaggle API token JSON file:")
+    # Get the EtherscanConnection instance from the connection
+    connection = create_connection()
 
-    if not kaggle_json_path:
-        st.warning("Please enter the path to your Kaggle API token JSON file.")
-        st.stop()
+    if connection.api_key:
+        st.success("Etherscan API connected successfully!")
 
-    # Create a connection object
-    connection = KaggleConnection(kaggle_json_path)
+        # Demo Etherscan API functionality
+        st.header("Demo Etherscan API Functionality")
 
-    # Query form
-    st.subheader("Download Kaggle Competition Data")
-    competition_name = st.text_input("Enter the competition name:")
-    file_name = st.text_input("Enter the file name to download:")
+        # Example query to retrieve Ethereum transactions by address
+        address = st.text_input("Enter an Ethereum address")
+        if address:
+            params = {
+                "address": address,
+                "startblock": 0,
+                "endblock": 99999999,
+                "sort": "asc",
+                "apikey": connection.api_key
+            }
+            df = connection.query(module="account", action="txlist", params=params)
 
-    if st.button("Download"):
-        if competition_name and file_name:
-            df = connection.query(competition_name, file_name)
-            if not df.empty:
-                st.write("Downloaded Data:")
+            if df is not None:
+                st.write("Transactions for Address:")
                 st.write(df)
-            else:
-                st.warning("Data not available or failed to download.")
-        else:
-            st.warning("Please enter the competition name and file name.")
 
 if __name__ == "__main__":
     main()
